@@ -127,7 +127,10 @@ def handle_stream_frame(data):
         socketio.emit("update_counts", {"user_count": 0, "happy_count": 0})
 
 
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
+    print(f"Starting server on port {port}")
     socketio.run(app, host='0.0.0.0', port=port)
+    
     
