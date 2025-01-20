@@ -64,7 +64,7 @@
     </div>
 
     <script>
-        const socket = io();
+        const socket = io(window.location.origin);
         const video = document.getElementById('videoElement');
         const userCountElement = document.getElementById('userCount');
         const happyCountElement = document.getElementById('happyCount');
