@@ -129,9 +129,6 @@ def handle_stream_frame(data):
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT"))
+    port = int(os.environ.get("PORT", 10000))
     print(f"Starting server on port {port}")
-    socketio.run(app, host="0.0.0.0", port=port)
-
-    
-    
+    socketio.run(app, host='0.0.0.0', port=port)
