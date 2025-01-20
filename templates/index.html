@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Person and Emotion Detection</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .video-container {
+            margin: 20px 0;
+        }
+        #videoElement {
+            width: 100%;
+            max-width: 640px;
+            border: 2px solid #333;
+            border-radius: 8px;
+        }
+        .stats-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .stat-box {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            min-width: 150px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .stat-label {
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Person and Emotion Detection</h1>
+
+    <div class="video-container">
+        <video id="videoElement" autoplay playsinline></video>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-box">
+            <div id="userCount" class="stat-value">0</div>
+            <div class="stat-label">People Detected</div>
+        </div>
+        <div class="stat-box">
+            <div id="happyCount" class="stat-value">0</div>
+            <div class="stat-label">Happy People</div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const video = document.getElementById('videoElement');
+        const userCountElement = document.getElementById('userCount');
+        const happyCountElement = document.getElementById('happyCount');
+        let isProcessing = false;
+
+        async function startVideo() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error('Error accessing webcam:', err);
+            }
+        }
+
+        startVideo();
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        function captureAndSendFrame() {
+            if (isProcessing) return;
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                isProcessing = true;
+
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                try {
+                    const frameData = canvas.toDataURL('image/jpeg', 0.5);
+                    socket.emit('stream_frame', frameData);
+                } catch (err) {
+                    console.error('Error capturing frame:', err);
+                    isProcessing = false;
+                }
+            }
+        }
+
+        // Capture frames every 300ms
+        setInterval(captureAndSendFrame, 300);
+
+        socket.on('update_counts', function(data) {
+            userCountElement.textContent = data.user_count;
+            happyCountElement.textContent = data.happy_count;
+            isProcessing = false;
+        });
+
+        // Handle connection
+        socket.on('connect', () => console.log('Connected to server'));
+        socket.on('disconnect', () => console.log('Disconnected from server'));
+    </script>
+</body>
+</html>
